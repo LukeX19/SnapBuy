@@ -361,5 +361,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-
-/SnapBuy/SnapBuy.Api/appsettings.json
+api/SnapBuy/SnapBuy.Api/appsettings.json
