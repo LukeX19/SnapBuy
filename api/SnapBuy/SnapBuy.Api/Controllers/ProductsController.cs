@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SnapBuy.Domain.Entities;
 using SnapBuy.Domain.Interfaces;
+using SnapBuy.Domain.Specifications;
 
 namespace SnapBuy.Api.Controllers
 {
@@ -8,9 +9,9 @@ namespace SnapBuy.Api.Controllers
     [Route("api/[controller]")]
     public class ProductsController : ControllerBase
     {
-        private readonly IProductRepository _repo;
+        private readonly IGenericRepository<Product> _repo;
 
-        public ProductsController(IProductRepository repo)
+        public ProductsController(IGenericRepository<Product> repo)
         {
             _repo = repo;
         }
@@ -18,13 +19,17 @@ namespace SnapBuy.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(string? brand, string? type, string? sort)
         {
-            return Ok(await _repo.GetProductsAsync(brand, type, sort));
+            var spec = new ProductSpecification(brand, type, sort);
+
+            var products = await _repo.ListAsync(spec);
+
+            return Ok(products);
         }
 
         [HttpGet("{id:long}")]
         public async Task<ActionResult<Product>> GetProduct(long id)
         {
-            var product = await _repo.GetProductByIdAsync(id);
+            var product = await _repo.GetByIdAsync(id);
             if (product == null)
             {
                 return NotFound();
@@ -36,9 +41,9 @@ namespace SnapBuy.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct(Product product)
         {
-            _repo.AddProduct(product);
+            _repo.Add(product);
 
-            if (await _repo.SaveChangesAsync())
+            if (await _repo.SaveAllAsync())
             {
                 return CreatedAtAction("GetProduct", new { id = product.Id }, product);
             }
@@ -54,9 +59,9 @@ namespace SnapBuy.Api.Controllers
                 return BadRequest("Cannot update this product");
             }
 
-            _repo.UpdateProduct(product);
+            _repo.Update(product);
 
-            if (await _repo.SaveChangesAsync())
+            if (await _repo.SaveAllAsync())
             {
                 return NoContent();
             }
@@ -67,16 +72,16 @@ namespace SnapBuy.Api.Controllers
         [HttpDelete("{id:long}")]
         public async Task<ActionResult> DeleteProduct(long id)
         {
-            var product = await _repo.GetProductByIdAsync(id);
+            var product = await _repo.GetByIdAsync(id);
 
             if (product == null)
             {
                 return NotFound();
             }
 
-            _repo.DeleteProduct(product);
+            _repo.Remove(product);
 
-            if (await _repo.SaveChangesAsync())
+            if (await _repo.SaveAllAsync())
             {
                 return NoContent();
             }
@@ -87,18 +92,22 @@ namespace SnapBuy.Api.Controllers
         [HttpGet("brands")]
         public async Task<ActionResult<IReadOnlyList<string>>> GetBrands()
         {
-            return Ok(await _repo.GetBrandsAsync());
+            var spec = new BrandListSpecification();
+
+            return Ok(await _repo.ListAsync(spec));
         }
 
         [HttpGet("types")]
         public async Task<ActionResult<IReadOnlyList<string>>> GetTypes()
         {
-            return Ok(await _repo.GetTypesAsync());
+            var spec = new TypeListSpecification();
+
+            return Ok(await _repo.ListAsync(spec));
         }
 
         private bool ProductExists(long id)
         {
-            return _repo.ProductExists(id);
+            return _repo.Exists(id);
         }
 
     }
