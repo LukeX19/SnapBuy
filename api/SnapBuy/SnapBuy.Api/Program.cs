@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SnapBuy.Api.Middleware;
 using SnapBuy.Domain.Interfaces;
 using SnapBuy.Infrastructure;
 using SnapBuy.Infrastructure.Repositories;
@@ -19,6 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddCors();
 
 var app = builder.Build();
 
@@ -32,6 +34,11 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod()
+    .WithOrigins("http://localhost:4200", "https://localhost:4200"));
 
 app.MapControllers();
 
