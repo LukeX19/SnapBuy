@@ -5,9 +5,7 @@ using SnapBuy.Domain.Specifications;
 
 namespace SnapBuy.Api.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class ProductsController : ControllerBase
+    public class ProductsController : BaseApiController
     {
         private readonly IGenericRepository<Product> _repo;
 
@@ -17,13 +15,11 @@ namespace SnapBuy.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(string? brand, string? type, string? sort)
+        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts([FromQuery]ProductSpecParams specParams)
         {
-            var spec = new ProductSpecification(brand, type, sort);
+            var spec = new ProductSpecification(specParams);
 
-            var products = await _repo.ListAsync(spec);
-
-            return Ok(products);
+            return await CreatePagedResult(_repo, spec, specParams.PageIndex, specParams.PageSize);
         }
 
         [HttpGet("{id:long}")]
